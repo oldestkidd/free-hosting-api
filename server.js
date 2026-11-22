@@ -1,18 +1,20 @@
+
 const express = require("express");
 const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+
 app.use(cors({
     origin: process.env.FRONTEND_URL
-        ? process.env.FRONTEND_URL.split(",")
+        ? process.env.FRONTEND_URL.split(",").map(url => url.trim())
         : "http://localhost:5173"
 }));
-const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 
-// Connect to Supabase using server-side credentials
+// Supabase connection
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
@@ -26,6 +28,7 @@ const supabase = supabaseUrl && supabaseSecretKey
     })
     : null;
 
+// API home
 app.get("/", (req, res) => {
     res.json({
         message: "My shared backend API is running!",
@@ -33,6 +36,7 @@ app.get("/", (req, res) => {
     });
 });
 
+// Health check
 app.get("/health", (req, res) => {
     res.json({
         status: "healthy",
@@ -40,8 +44,17 @@ app.get("/health", (req, res) => {
     });
 });
 
-// Test the Supabase database connection
+// Database test and projects endpoint
 app.get("/db-test", async (req, res) => {
+    return getProjects(req, res);
+});
+
+app.get("/api/v1/projects", async (req, res) => {
+    return getProjects(req, res);
+});
+
+// Shared database query
+async function getProjects(req, res) {
     if (!supabase) {
         return res.status(500).json({
             status: "error",
@@ -59,7 +72,6 @@ app.get("/db-test", async (req, res) => {
 
         res.json({
             status: "success",
-            message: "Supabase database connected successfully!",
             total_projects: data.length,
             projects: data
         });
@@ -72,7 +84,7 @@ app.get("/db-test", async (req, res) => {
             message: "Could not retrieve database records"
         });
     }
-});
+}
 
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
